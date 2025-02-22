@@ -110,6 +110,6 @@ Below are five illustrative scenarios demonstrating different approaches to gene
 
 ## References
 
-- [^1]: [How to get a RAG application to add citations](https://python.langchain.com/docs/how_to/qa_citations/)
-- [^2]: [Build RAG with in-line citations](https://docs.llamaindex.ai/en/stable/examples/workflow/citation_query_engine/)
-- [^3]: [Attention Is All You Need (arXiv:1706.03762v7)](https://arxiv.org/html/1706.03762v7)
+[^1]: [How to get a RAG application to add citations](https://python.langchain.com/docs/how_to/qa_citations/)
+[^2]: [Build RAG with in-line citations](https://docs.llamaindex.ai/en/stable/examples/workflow/citation_query_engine/)
+[^3]: [Attention Is All You Need (arXiv:1706.03762v7)](https://arxiv.org/html/1706.03762v7)
