@@ -4,7 +4,7 @@
 
 This prompt instructs a **Retrieval-Augmented Generation (RAG)** system (acting as a professional researcher) to search for necessary information in external documents and produce detailed explanations in Markdown format. The system must:
 
-- Retrieve and consolidate content from a specified web source (for example, the paper "Attention Is All You Need" at [arXiv:1706.03762v7](https://arxiv.org/html/1706.03762v7)[^3]).
+- Retrieve and consolidate content from a specified web source (e.g., the paper "Attention Is All You Need" at [arXiv:1706.03762v7](https://arxiv.org/html/1706.03762v7)[^3]).
 - Process the retrieved content along with a user’s query using a LangChain-based language model (such as gpt-4o-mini).
 - Embed in-line citations in footnote format (e.g., [^1], [^2], etc.) within the answer. Each citation must include the complete source URL or file reference along with any relevant metadata (such as document title or page number).
 - Output the final answer as a fully rendered Markdown document with all major headings in level 2 (`##`) and a single consolidated **References** section at the end.
