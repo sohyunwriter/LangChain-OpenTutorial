@@ -850,9 +850,7 @@ class pgVectorDocumentManager(DocumentManager):
                 "content": result.document,
                 "metadata": result.cmetadata,
                 "embedding": (
-                    result.embedding
-                    if kwargs.get("include_embedding", False) == True
-                    else None
+                    result.embedding if kwargs.get("include_embedding", False) else None
                 ),
             }
             for result in results
