@@ -7,7 +7,7 @@ from hashlib import md5
 import os, time, uuid, json, enum
 import contextlib
 
-import sqlalchemy, psycopg2
+import sqlalchemy
 from sqlalchemy import (
     SQLColumnExpression,
     cast,
@@ -199,31 +199,32 @@ class pgVectorIndexManager:
         else:
             assert host is not None, "host is missing"
             assert port is not None, "port is missing"
-            assert username is not None or user is not None, "username(or user) is missing"
+            assert (
+                username is not None or user is not None
+            ), "username(or user) is missing"
             assert (
                 password is not None or passwd is not None
             ), "password(or passwd) is missing"
             assert dbname is not None or db is not None, "dbname(or db) is missing"
-        
+
             self.host = host
             self.port = port
             self.userName = username if username is not None else user
             self.passWord = password if password is not None else passwd
             self.dbName = dbname if dbname is not None else db
             self.connection_str = f"postgresql+psycopg://{self.userName}:{self.passWord}@{self.host}:{self.port}/{self.dbName}"
-        
+
         self._engine = create_engine(url=self.connection_str, **({}))
         self.session_maker: scoped_session
         self.session_maker = scoped_session(sessionmaker(bind=self._engine))
         self.collection_metadata = None
-        
+        self._check_extension()
         EmbeddingStore, CollectionStore = _get_embedding_collection_store()
         self.CollectionStore = CollectionStore
         self.EmbeddingStore = EmbeddingStore
         with self._make_sync_session() as session:
             Base.metadata.create_all(session.get_bind())
             session.commit()
-
 
     def _connect(self):
         return self._engine.connect()
@@ -252,34 +253,37 @@ class pgVectorIndexManager:
         try:
             with self._make_sync_session() as session:
                 collection = self.CollectionStore.get_by_name(session, collection_name)
-                
+
                 if collection is None:
                     print(f"Collection {collection_name} does not exist")
                     return True
-                
+
                 stmt = delete(self.EmbeddingStore)
                 filter_by = [self.EmbeddingStore.collection_id == collection.uuid]
                 stmt = stmt.filter(*filter_by)
 
                 session.execute(stmt)
                 session.commit()
-        
+
         except Exception as e:
-            print(f"Deleting data from langchain_pg_embedding failed due to {type(e)} {str(e)}")
+            print(
+                f"Deleting data from langchain_pg_embedding failed due to {type(e)} {str(e)}"
+            )
             return False
         else:
             try:
                 with self._connect() as conn:
-                    query  = sqlalchemy.text(f"DELETE FROM langchain_pg_collection WHERE name = '{collection_name}'")
+                    query = sqlalchemy.text(
+                        f"DELETE FROM langchain_pg_collection WHERE name = '{collection_name}'"
+                    )
                     conn.execute(query)
                     conn.commit()
             except Exception as e:
-                print(f"Delete collection information row failed due to {type(e)} {str(e)}")
+                print(
+                    f"Delete collection information row failed due to {type(e)} {str(e)}"
+                )
             else:
                 return True
-
-            
-        
 
     def _check_extension(self):
         query = "SELECT * FROM pg_extension;"
@@ -307,7 +311,6 @@ class pgVectorIndexManager:
         if dimension is None:
             self.dimension = len(embedding.embed_query("foo"))
 
-        self._check_extension()
         EmbeddingStore, CollectionStore = _get_embedding_collection_store(
             self.dimension
         )
@@ -382,9 +385,6 @@ class pgVectorDocumentManager(DocumentManager):
         self.dbName = connection_info.get("dbname", "langchain")
         connection_str = f"postgresql+psycopg://{self.userName}:{self.passWord}@{self.host}:{self.port}/{self.dbName}"
         return connection_str
-
-    def _connect(self):
-        return psycopg2.connect(**self.connection_info)
 
     def _embed_doc(self, texts) -> List[float]:
         embedded = self.embeddings.embed_documents(texts)
@@ -478,24 +478,28 @@ class pgVectorDocumentManager(DocumentManager):
         self.distance = distance.lower()
         embeded_query = self.embeddings.embed_query(query)
         results = self.__query_collection(embeded_query, k, filter)
-        
-        if distance ==  'cosine':
+
+        if distance == "cosine":
             self._distance_strategy = DistanceStrategy.COSINE
-        elif distance == 'inner':
+        elif distance == "inner":
             self._distance_strategy = DistanceStrategy.MAX_INNER_PRODUCT
-        elif distance == 'l2':
+        elif distance == "l2":
             self._distance_strategy = DistanceStrategy.EUCLIDEAN
 
         docs = [
             {
                 "content": result.EmbeddingStore.document,
                 "metadata": result.EmbeddingStore.cmetadata,
-                "embedding": result.EmbeddingStore.embedding if kwargs.get('include_embedding', False)==True else None,
-                "score": result.distance if distance == 'l2' else 1-result.distance
+                "embedding": (
+                    result.EmbeddingStore.embedding
+                    if kwargs.get("include_embedding", False) == True
+                    else None
+                ),
+                "score": result.distance if distance == "l2" else 1 - result.distance,
             }
             for result in results
         ]
-        
+
         return docs
 
     def _create_filter_clause(self, filters: Any) -> Any:
@@ -790,14 +794,13 @@ class pgVectorDocumentManager(DocumentManager):
                     session.execute(stmt)
                 session.commit()
         except Exception as e:
-            msg = (f"Delete failed due to {type(e)} {str(e)}")
+            msg = f"Delete failed due to {type(e)} {str(e)}"
             return False
         else:
             msg = "Delete done successfully"
             return True
         finally:
             print(msg)
-
 
     def scroll(self, ids=None, filter=None, k=10, **kwargs):
         with self._make_sync_session() as session:  # type: ignore[arg-type]
@@ -829,7 +832,11 @@ class pgVectorDocumentManager(DocumentManager):
             {
                 "content": result.document,
                 "metadata": result.cmetadata,
-                "embedding": result.embedding if kwargs.get('include_embedding', False)==True else None,
+                "embedding": (
+                    result.embedding
+                    if kwargs.get("include_embedding", False) == True
+                    else None
+                ),
             }
             for result in results
         ]
