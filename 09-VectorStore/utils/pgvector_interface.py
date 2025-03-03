@@ -6,7 +6,9 @@ from tqdm.auto import tqdm
 from hashlib import md5
 import os, time, uuid, json, enum
 import contextlib
-
+from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
+from langchain_core.embeddings import Embeddings
+from pydantic import ConfigDict, Field, model_validator
 import sqlalchemy
 from sqlalchemy import (
     SQLColumnExpression,
@@ -44,7 +46,10 @@ from typing import (
     Tuple,
     Type,
     Union,
+    ClassVar,
 )
+
+from collections.abc import Collection
 
 COMPARISONS_TO_NATIVE = {
     "$eq": "==",
@@ -477,6 +482,7 @@ class pgVectorDocumentManager(DocumentManager):
     def search(self, query, k=10, distance="cosine", filter=None, **kwargs):
         self.distance = distance.lower()
         embeded_query = self.embeddings.embed_query(query)
+
         results = self.__query_collection(embeded_query, k, filter)
 
         if distance == "cosine":
@@ -802,6 +808,17 @@ class pgVectorDocumentManager(DocumentManager):
         finally:
             print(msg)
 
+    def _get_retriever_tags(self) -> list[str]:
+        """Get tags for retriever."""
+        tags = [self.__class__.__name__]
+        if self.embeddings:
+            tags.append(self.embeddings.__class__.__name__)
+        return tags
+
+    def as_retriever(self, **kwargs):
+        tags = kwargs.pop("tags", None) or [] + self._get_retriever_tags()
+        return pgVectorRetriever(vectorstore=self, tags=tags, **kwargs)
+
     def scroll(self, ids=None, filter=None, k=10, **kwargs):
         with self._make_sync_session() as session:  # type: ignore[arg-type]
             collection = self.CollectionStore.get_by_name(
@@ -842,3 +859,85 @@ class pgVectorDocumentManager(DocumentManager):
         ]
 
         return docs
+
+
+class pgVectorRetriever(BaseRetriever):
+    vectorstore: pgVectorDocumentManager
+    search_type: str = "similarity"
+    search_kwargs: dict = Field(default_factory=dict)
+    allowed_search_types: ClassVar[Collection[str]] = (
+        "similarity",
+        "similarity_score_threshold",
+        "mmr",
+    )
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_search_type(cls, values: dict) -> Any:
+        search_type = values.get("search_type", "similarity")
+        if search_type not in cls.allowed_search_types:
+            msg = (
+                f"search_type of {search_type} not allowed. Valid values are: "
+                f"{cls.allowed_search_types}"
+            )
+            raise ValueError(msg)
+        if search_type == "similarity_score_threshold":
+            score_threshold = values.get("search_kwargs", {}).get("score_threshold")
+            if (score_threshold is None) or (not isinstance(score_threshold, float)):
+                msg = (
+                    "`score_threshold` is not specified with a float value(0~1) "
+                    "in `search_kwargs`."
+                )
+                raise ValueError(msg)
+        return values
+
+    def _get_ls_params(self, **kwargs: Any) -> LangSmithRetrieverParams:
+        """Get standard params for tracing."""
+
+        _kwargs = self.search_kwargs | kwargs
+
+        ls_params = super()._get_ls_params(**_kwargs)
+        ls_params["ls_vector_store_provider"] = self.vectorstore.__class__.__name__
+
+        if self.vectorstore.embeddings:
+            ls_params["ls_embedding_provider"] = (
+                self.vectorstore.embeddings.__class__.__name__
+            )
+        elif hasattr(self.vectorstore, "embedding") and isinstance(
+            self.vectorstore.embedding, Embeddings
+        ):
+            ls_params["ls_embedding_provider"] = (
+                self.vectorstore.embedding.__class__.__name__
+            )
+
+        return ls_params
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager, **kwargs: Any
+    ) -> list[Document]:
+        _kwargs = self.search_kwargs | kwargs
+        print(f"_kwargs: {_kwargs}")
+        if self.search_type == "similarity":
+            docs = self.vectorstore.search(query, **_kwargs)
+        else:
+            msg = f"search_type of {self.search_type} not allowed."
+            raise ValueError(msg)
+        return docs
+
+    def add_documents(self, documents: list[Document], **kwargs: Any) -> list[str]:
+        """Add documents to the vectorstore.
+
+        Args:
+            documents: Documents to add to the vectorstore.
+            **kwargs: Other keyword arguments that subclasses might use.
+
+        Returns:
+            List of IDs of the added texts.
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return self.vectorstore.upsert(texts, metadatas, **kwargs)
