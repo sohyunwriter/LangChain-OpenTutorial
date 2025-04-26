@@ -74,7 +74,7 @@ Unless stated otherwise, the codebase is released under the [MIT Licence][1]. Th
 | Gwangwon Jung (Pupba) | [LinkedIn](https://www.linkedin.com/in/gwangwon-jung-5287a7275) | Wooseok Jeong | [LinkedIn](https://www.linkedin.com/in/wooseok-j-david) | Ilgyun Jeong | [LinkedIn](https://www.linkedin.com/in/ilgyun-jeong) |
 | Youngjun Cho | [LinkedIn](https://www.linkedin.com/in/choincnp/) | Jinu Cho | [LinkedIn](https://www.linkedin.com/in/jinucho/) | Hwayoung Cha | [LinkedIn](https://www.linkedin.com/in/hwayoung-cha/) |
 | Ash-hun | [LinkedIn](https://www.linkedin.com/in/choijaehun/) | Yeonhee Han | [LinkedIn](https://www.linkedin.com/in/yeonhee-han-64160a177/) | Sooyoung Her | [LinkedIn](https://www.linkedin.com/in/sooyoung-her-3b0720b3) |
-| Seongmin Hong (Solon) | [LinkedIn](https://www.linkedin.com/in/oursophy/) | Jaemin Hong | [LinkedIn](https://www.linkedin.com/in/geminii01/) |  |  |
+| Seongmin Hong (Solon) | [LinkedIn](https://www.linkedin.com/in/oursophy/) | Jaemin Hong | [LinkedIn](https://www.linkedin.com/in/geminii01/) | Chaeyoon Kim | [GitHub](https://github.com/chaeyoonyunakim/) |
 
 ---
 
