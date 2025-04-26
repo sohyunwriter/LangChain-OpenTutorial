@@ -31,14 +31,6 @@ At this base repository, it serves as a home for both beginners and seasoned Lan
 - [langchain-ai](https://github.com/langchain-ai/langchain) 📖
 - [LangGraph GitHub](https://github.com/langchain-ai/langgraph)
 - [LangChain Documentation](https://python.langchain.com/docs/introduction/)
-- [OpenAI API Reference](https://platform.openai.com/docs/introduction) 🤖
-
-## 🔗 Community Links
-- **LangChain Korean Tutorial(wikidocs)**: [WikiDocs](https://wikidocs.net/book/14314)
-- **LangChain Korean Tutorial(github)**: [GitHub Repository](https://github.com/teddylee777/langchain-kr)
-- **YouTube Channel**: [Teddy Note](https://www.youtube.com/channel/UCt2wAAXgm87ACiQnDHQEW6Q) 🎥
-- **Blog**: [Teddy Note](https://teddylee777.github.io) 📝
-- **Playground**: [LangChain LLM Playground](http://llm.teddynote.com) 🎮
 
 ## Licence
 
